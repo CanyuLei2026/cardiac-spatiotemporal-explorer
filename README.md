@@ -2,6 +2,10 @@
 
 An interactive web viewer for cardiac geometry and per-point electrical signals. The application links a 3D point-cloud view with an 801-frame `U_heart` trace.
 
+## Live demo
+
+[Open the Cardiac Spatiotemporal Explorer](https://canyulei2026.github.io/cardiac-spatiotemporal-explorer/)
+
 ## Data
 
 The original research dataset is too large to include in this GitHub repository. Therefore, `case_0004.mat` was selected as a representative cardiac data case for this project. To keep the web demonstration lightweight, the included data is a fixed-seed, 2,500-point sample from the 11,000 cardiac points in the source case.
