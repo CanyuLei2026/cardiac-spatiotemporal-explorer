@@ -1,4 +1,4 @@
-const CASE_ROOT = '/data/case_0004'
+const CASE_ROOT = `${import.meta.env.BASE_URL}data/case_0004`
 
 async function fetchBuffer(path) {
   const response = await fetch(`${CASE_ROOT}/${path}`)
