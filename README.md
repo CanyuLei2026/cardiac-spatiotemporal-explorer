@@ -4,7 +4,7 @@ An interactive web viewer for cardiac geometry and per-point electrical signals.
 
 ## Data
 
-The included demonstration data is a fixed-seed, 2,500-point sample from `case_0004.mat`. The source case contains 11,000 cardiac points. The full research dataset is not included.
+The original research dataset is too large to include in this GitHub repository. Therefore, `case_0004.mat` was selected as a representative cardiac data case for this project. To keep the web demonstration lightweight, the included data is a fixed-seed, 2,500-point sample from the 11,000 cardiac points in the source case.
 
 Included variables:
 
