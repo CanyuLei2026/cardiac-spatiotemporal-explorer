@@ -42,7 +42,8 @@ export default function SignalPlot({
   const historyStart = Math.max(0, frame - historyFrames + 1)
   const horizonEnd = Math.min(trace.length - 1, frame + horizonFrames)
   const activationX = activationFrame === null ? null : frameX(activationFrame)
-  const currentY = PAD.top + (1 - (trace[frame] - geometry.min) / Math.max(geometry.max - geometry.min, 1e-6)) * geometry.plotHeight
+  const signalY = PAD.top + (1 - (trace[frame] - geometry.min) / Math.max(geometry.max - geometry.min, 1e-6)) * geometry.plotHeight
+  const cursorY = showPredictionWindow ? signalY : PAD.top + geometry.plotHeight / 2
   const handlePointer = (event) => {
     const rect = svgRef.current.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * WIDTH
@@ -74,9 +75,9 @@ export default function SignalPlot({
         <polyline points={geometry.points} className="signal-line" />
       ) : (
         <>
-          <line x1={PAD.left} x2={WIDTH - PAD.right} y1={currentY} y2={currentY} className="current-value-line" />
+          <line x1={PAD.left} x2={WIDTH - PAD.right} y1={cursorY} y2={cursorY} className="current-value-line" />
           <text x={PAD.left + 10} y={PAD.top + 17} className="hidden-future-label">signal hidden until prediction</text>
-          <text x={WIDTH - PAD.right - 8} y={currentY - 8} textAnchor="end" className="current-value-label">current Uheart {trace[frame].toFixed(3)}</text>
+          <text x={WIDTH - PAD.right - 8} y={cursorY - 8} textAnchor="end" className="current-value-label">signal hidden</text>
         </>
       )}
       {showPredictionWindow && activationX !== null && (
@@ -88,12 +89,16 @@ export default function SignalPlot({
       <line x1={cursorX} x2={cursorX} y1={PAD.top} y2={HEIGHT - PAD.bottom} className="time-cursor" />
       <circle
         cx={cursorX}
-        cy={currentY}
+        cy={cursorY}
         r="6"
         className="cursor-dot"
       />
-      <text x="10" y={PAD.top + 6} className="axis-label">{geometry.max.toFixed(3)}</text>
-      <text x="10" y={HEIGHT - PAD.bottom + 5} className="axis-label">{geometry.min.toFixed(3)}</text>
+      {showPredictionWindow && (
+        <>
+          <text x="10" y={PAD.top + 6} className="axis-label">{geometry.max.toFixed(3)}</text>
+          <text x="10" y={HEIGHT - PAD.bottom + 5} className="axis-label">{geometry.min.toFixed(3)}</text>
+        </>
+      )}
       <text x={PAD.left} y={HEIGHT - 10} className="axis-label">{time[0].toFixed(1)}</text>
       <text x={WIDTH - PAD.right} y={HEIGHT - 10} textAnchor="end" className="axis-label">{time[time.length - 1].toFixed(1)}</text>
       <text x={WIDTH / 2} y={HEIGHT - 10} textAnchor="middle" className="axis-title">Simulation time</text>

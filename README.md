@@ -35,7 +35,7 @@ Included variables:
 - Enter XYZ coordinates and simulation time; the app matches the nearest sampled point for prediction
 - Run the trained PyTorch MLP weights directly in the browser
 - Compare the prediction with ground truth and display confidence
-- Hide the complete signal while selecting a time, show only the current-value guide, then reveal the full trace and ground truth after prediction
+- Hide the complete signal and its vertical scale while selecting a time, show only a fixed horizontal guide, then reveal the full trace and ground truth after prediction
 - Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
 - Display training/validation loss, held-out metrics, confusion matrix, and linear-baseline comparison
 
