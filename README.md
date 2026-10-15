@@ -23,7 +23,7 @@ Included variables:
 - Rotate, pan, and zoom the 3D cardiac point cloud
 - Color the geometry by electrical potential at the current time
 - Play, pause, scrub, and change animation speed
-- Select a point and inspect its complete signal
+- Select a point and inspect its signal after requesting a prediction
 - Synchronize the signal cursor with the 3D time frame
 - Filter points by surface region, point type, or component
 - Read human-readable definitions for every numeric point label
@@ -35,7 +35,7 @@ Included variables:
 - Enter XYZ coordinates and simulation time; the app matches the nearest sampled point for prediction
 - Run the trained PyTorch MLP weights directly in the browser
 - Compare the prediction with ground truth and display confidence
-- Hide future signal values until prediction, then reveal the forecast window and ground truth
+- Hide the complete signal while selecting a time, show only the current-value guide, then reveal the full trace and ground truth after prediction
 - Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
 - Display training/validation loss, held-out metrics, confusion matrix, and linear-baseline comparison
 

@@ -17,10 +17,9 @@ export default function SignalPlot({
   const svgRef = useRef()
   const geometry = useMemo(() => {
     if (!trace?.length) return null
-    const revealedThrough = showPredictionWindow ? trace.length - 1 : frame
     let min = Infinity
     let max = -Infinity
-    for (let index = 0; index <= revealedThrough; index += 1) {
+    for (let index = 0; index < trace.length; index += 1) {
       const value = trace[index]
       min = Math.min(min, value)
       max = Math.max(max, value)
@@ -28,13 +27,13 @@ export default function SignalPlot({
     const ySpan = Math.max(max - min, 1e-6)
     const plotWidth = WIDTH - PAD.left - PAD.right
     const plotHeight = HEIGHT - PAD.top - PAD.bottom
-    const points = Array.from(trace.subarray(0, revealedThrough + 1), (value, index) => {
+    const points = Array.from(trace, (value, index) => {
       const x = PAD.left + (index / (trace.length - 1)) * plotWidth
       const y = PAD.top + (1 - (value - min) / ySpan) * plotHeight
       return `${x.toFixed(2)},${y.toFixed(2)}`
     }).join(' ')
     return { min, max, points, plotWidth, plotHeight }
-  }, [trace, frame, showPredictionWindow])
+  }, [trace])
 
   if (!geometry) return <div className="signal-empty">Select a point to inspect its signal.</div>
 
@@ -43,6 +42,7 @@ export default function SignalPlot({
   const historyStart = Math.max(0, frame - historyFrames + 1)
   const horizonEnd = Math.min(trace.length - 1, frame + horizonFrames)
   const activationX = activationFrame === null ? null : frameX(activationFrame)
+  const currentY = PAD.top + (1 - (trace[frame] - geometry.min) / Math.max(geometry.max - geometry.min, 1e-6)) * geometry.plotHeight
   const handlePointer = (event) => {
     const rect = svgRef.current.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * WIDTH
@@ -70,13 +70,15 @@ export default function SignalPlot({
           <rect x={cursorX} y={PAD.top} width={Math.max(1, frameX(horizonEnd) - cursorX)} height={geometry.plotHeight} className="forecast-window" />
         </>
       )}
-      {!showPredictionWindow && (
+      {showPredictionWindow ? (
+        <polyline points={geometry.points} className="signal-line" />
+      ) : (
         <>
-          <rect x={cursorX} y={PAD.top} width={Math.max(1, WIDTH - PAD.right - cursorX)} height={geometry.plotHeight} className="hidden-future" />
-          <text x={Math.min(cursorX + 12, WIDTH - PAD.right - 165)} y={PAD.top + 17} className="hidden-future-label">future signal hidden</text>
+          <line x1={PAD.left} x2={WIDTH - PAD.right} y1={currentY} y2={currentY} className="current-value-line" />
+          <text x={PAD.left + 10} y={PAD.top + 17} className="hidden-future-label">signal hidden until prediction</text>
+          <text x={WIDTH - PAD.right - 8} y={currentY - 8} textAnchor="end" className="current-value-label">current Uheart {trace[frame].toFixed(3)}</text>
         </>
       )}
-      <polyline points={geometry.points} className="signal-line" />
       {showPredictionWindow && activationX !== null && (
         <>
           <line x1={activationX} x2={activationX} y1={PAD.top} y2={HEIGHT - PAD.bottom} className="activation-line" />
@@ -86,7 +88,7 @@ export default function SignalPlot({
       <line x1={cursorX} x2={cursorX} y1={PAD.top} y2={HEIGHT - PAD.bottom} className="time-cursor" />
       <circle
         cx={cursorX}
-        cy={PAD.top + (1 - (trace[frame] - geometry.min) / Math.max(geometry.max - geometry.min, 1e-6)) * geometry.plotHeight}
+        cy={currentY}
         r="6"
         className="cursor-dot"
       />

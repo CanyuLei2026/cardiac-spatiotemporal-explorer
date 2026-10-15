@@ -406,7 +406,7 @@ function App() {
       </section>
 
       <section className="signal-panel panel">
-        <div className="signal-heading"><div><span className="eyebrow">Linked signal</span><h2>Electrical signal U<sub>heart</sub> over simulation time</h2></div><p>Only observed signal is shown before prediction. Click Predict to reveal the future and ground truth.</p></div>
+        <div className="signal-heading"><div><span className="eyebrow">Linked signal</span><h2>Electrical signal U<sub>heart</sub> over simulation time</h2></div><p>The signal is hidden while choosing a time. Click Predict to reveal the complete signal and ground truth.</p></div>
         <SignalPlot
           trace={selectedTrace}
           time={metadata.time}
