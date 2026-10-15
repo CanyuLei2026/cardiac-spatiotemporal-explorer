@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import InteractiveTraining from './InteractiveTraining.jsx'
 
 function percent(value) {
   return `${(value * 100).toFixed(1)}%`
@@ -92,7 +93,7 @@ function SplitMetrics({ metrics }) {
   )
 }
 
-export default function ModelPerformance({ model }) {
+export default function ModelPerformance({ model, data }) {
   if (!model) return null
   const mlp = model.metrics.mlp
   const splitMetrics = model.metrics.mlpBySplit
@@ -137,6 +138,7 @@ export default function ModelPerformance({ model }) {
         </div>
       </div>
       {splitMetrics && <SplitMetrics metrics={splitMetrics} />}
+      <InteractiveTraining data={data} />
     </section>
   )
 }

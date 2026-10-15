@@ -39,6 +39,8 @@ Included variables:
 - Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
 - Replay the recorded training process epoch by epoch with synchronized training/validation loss
 - Display complete training, validation, and held-out test metrics, plus a confusion matrix and linear-baseline comparison
+- Train a compact MLP directly in the browser with adjustable learning rate, epoch count, and hidden-layer size
+- Monitor live training/validation loss and accuracy, progress, and best epoch during the browser experiment
 
 ## Neural-network task
 
@@ -59,6 +61,12 @@ This prevents similar windows from the same cardiac simulation from appearing in
 The final model was trained with a `0.0001` learning rate and evaluated on 42,964 examples from the unseen `case_0004`. The MLP achieved **94.31% accuracy**, **5.69% error**, **0.943 F1**, and **0.988 AUROC**. The logistic-regression benchmark achieved **93.71% accuracy** and **6.29% error** on the same examples. Thus, the neural network reduced the benchmark error by about 9.7% relative to logistic regression.
 
 The saved metrics, learning curves, confusion matrix, and PyTorch checkpoint are in [`artifacts/`](artifacts/). The browser uses the same trained weights exported to [`public/model/activation_model.json`](public/model/activation_model.json).
+
+## Interactive training sandbox
+
+The bonus training panel runs a separate, lightweight MLP experiment in a browser worker so the interface stays responsive. Choose a learning rate, 5–30 epochs (20 by default), and 16, 32, or 64 hidden units, then select **Start training**. The panel updates training and validation loss, accuracy, progress, and the best epoch after every epoch. **Stop** ends a run at the next epoch boundary.
+
+For speed, this experiment uses a compact balanced sample from the included `case_0004` browser data and one hidden layer. It is an interactive teaching demonstration only; it does not replace the formal five-case HPC model, held-out test split, or reported results above.
 
 ## Run locally
 

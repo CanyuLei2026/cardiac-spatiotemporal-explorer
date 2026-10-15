@@ -419,7 +419,7 @@ function App() {
         />
       </section>
 
-      <ModelPerformance model={model} />
+      <ModelPerformance model={model} data={data} />
     </main>
   )
 }
