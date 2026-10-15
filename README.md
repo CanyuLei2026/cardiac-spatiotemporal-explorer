@@ -37,7 +37,8 @@ Included variables:
 - Compare the prediction with ground truth and display confidence
 - Hide the complete signal and its vertical scale while selecting a time, show only a fixed horizontal guide, then reveal the full trace and ground truth after prediction
 - Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
-- Display training/validation loss, held-out metrics, confusion matrix, and linear-baseline comparison
+- Replay the recorded training process epoch by epoch with synchronized training/validation loss
+- Display complete training, validation, and held-out test metrics, plus a confusion matrix and linear-baseline comparison
 
 ## Neural-network task
 

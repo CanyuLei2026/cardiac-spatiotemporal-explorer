@@ -312,7 +312,19 @@ def main() -> None:
         args.patience,
     )
     baseline_metrics = evaluate(baseline, test_loader)
-    metrics = {"mlp": mlp_metrics, "logisticRegression": baseline_metrics}
+    # Evaluate the remaining MLP splits after baseline training so that these
+    # extra DataLoader passes do not change the seeded baseline initialization
+    # or batch order used by earlier versions of the experiment.
+    mlp_metrics_by_split = {
+        "training": evaluate(mlp, make_loader(train_x, train_y, args.batch_size, False)),
+        "validation": evaluate(mlp, val_loader),
+        "test": mlp_metrics,
+    }
+    metrics = {
+        "mlp": mlp_metrics,
+        "mlpBySplit": mlp_metrics_by_split,
+        "logisticRegression": baseline_metrics,
+    }
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     torch.save(

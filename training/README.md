@@ -28,7 +28,7 @@ python -m training.train \
   --test-case case_0004
 ```
 
-The script performs a case-level split before generating windows, computes normalization statistics from training cases only, trains both the MLP and a single-linear-layer baseline, evaluates the held-out case, and writes:
+The script performs a case-level split before generating windows, computes normalization statistics from training cases only, trains both the MLP and a single-linear-layer baseline, evaluates the best saved MLP checkpoint on the training, validation, and held-out test sets, and writes:
 
 - `artifacts/activation_mlp.pt`
 - `artifacts/metrics.json`
