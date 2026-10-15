@@ -32,8 +32,10 @@ Included variables:
 - Browse saved annotations in a list, review notes, select their 3D points, and delete records directly
 - Responsive desktop and mobile layouts
 - Predict whether a selected point will activate within the next 20 frames
+- Enter XYZ coordinates and simulation time; the app matches the nearest sampled point for prediction
 - Run the trained PyTorch MLP weights directly in the browser
 - Compare the prediction with ground truth and display confidence
+- Hide future signal values until prediction, then reveal the forecast window and ground truth
 - Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
 - Display training/validation loss, held-out metrics, confusion matrix, and linear-baseline comparison
 
@@ -53,7 +55,7 @@ This prevents similar windows from the same cardiac simulation from appearing in
 
 ## Held-out results
 
-The final model was evaluated on 42,964 examples from the unseen `case_0004`. The MLP achieved **94.13% accuracy**, **5.87% error**, **0.944 F1**, and **0.989 AUROC**. The logistic-regression benchmark achieved **92.12% accuracy** and **7.88% error** on the same examples. Thus, the neural network reduced the benchmark error by about 25.5% relative to logistic regression.
+The final model was trained with a `0.0001` learning rate and evaluated on 42,964 examples from the unseen `case_0004`. The MLP achieved **94.31% accuracy**, **5.69% error**, **0.943 F1**, and **0.988 AUROC**. The logistic-regression benchmark achieved **93.71% accuracy** and **6.29% error** on the same examples. Thus, the neural network reduced the benchmark error by about 9.7% relative to logistic regression.
 
 The saved metrics, learning curves, confusion matrix, and PyTorch checkpoint are in [`artifacts/`](artifacts/). The browser uses the same trained weights exported to [`public/model/activation_model.json`](public/model/activation_model.json).
 

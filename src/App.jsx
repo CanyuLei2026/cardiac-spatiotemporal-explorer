@@ -21,6 +21,35 @@ const POINT_TYPE_LABELS = {
 }
 const COMPONENT_LABELS = { 1: 'Main connected component' }
 
+function nearestPoint(points, x, y, z) {
+  let pointIndex = 0
+  let squaredDistance = Infinity
+  for (let index = 0; index < points.length / 3; index += 1) {
+    const dx = points[index * 3] - x
+    const dy = points[index * 3 + 1] - y
+    const dz = points[index * 3 + 2] - z
+    const candidate = dx * dx + dy * dy + dz * dz
+    if (candidate < squaredDistance) {
+      pointIndex = index
+      squaredDistance = candidate
+    }
+  }
+  return { pointIndex, distance: Math.sqrt(squaredDistance) }
+}
+
+function nearestFrame(time, requestedTime) {
+  let frame = 0
+  let distance = Infinity
+  for (let index = 0; index < time.length; index += 1) {
+    const candidate = Math.abs(time[index] - requestedTime)
+    if (candidate < distance) {
+      frame = index
+      distance = candidate
+    }
+  }
+  return frame
+}
+
 function FilterSelect({ label, value, values, labels, onChange }) {
   const options = Array.isArray(values) ? values : [values]
   return (
@@ -49,6 +78,7 @@ function App() {
   const [model, setModel] = useState(null)
   const [modelError, setModelError] = useState('')
   const [prediction, setPrediction] = useState(null)
+  const [predictionInput, setPredictionInput] = useState({ x: '', y: '', z: '', time: '' })
   const importRef = useRef()
   const [annotations, setAnnotations] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cardiac-annotations') || '[]') } catch { return [] }
@@ -96,15 +126,52 @@ function App() {
   }, [data, frame, colorMode])
 
   useEffect(() => {
-    setPrediction(null)
+    if (!data || selected === null) return
+    setPredictionInput({
+      x: data.points[selected * 3].toFixed(2),
+      y: data.points[selected * 3 + 1].toFixed(2),
+      z: data.points[selected * 3 + 2].toFixed(2),
+      time: data.metadata.time[frame].toFixed(1),
+    })
+  }, [data, selected, frame])
+
+  useEffect(() => {
+    setPrediction((current) => (
+      current?.pointIndex === selected && current?.frame === frame ? current : null
+    ))
   }, [selected, frame])
 
+  const editPredictionInput = (field, value) => {
+    setPrediction(null)
+    setPredictionInput((current) => ({ ...current, [field]: value }))
+  }
+
   const runPrediction = () => {
-    if (!model || !data || selected === null) return
+    if (!model || !data) return
+    const requested = {
+      x: Number(predictionInput.x),
+      y: Number(predictionInput.y),
+      z: Number(predictionInput.z),
+      time: Number(predictionInput.time),
+    }
+    if (!Object.values(requested).every(Number.isFinite)) {
+      setPrediction({ error: 'Enter numeric X, Y, Z, and simulation time values.' })
+      return
+    }
+    const match = nearestPoint(data.points, requested.x, requested.y, requested.z)
+    const targetFrame = nearestFrame(data.metadata.time, requested.time)
+    setPlaying(false)
+    setSelected(match.pointIndex)
+    setFrame(targetFrame)
     try {
-      setPrediction(predictActivation(model, data, selected, frame))
+      setPrediction({
+        ...predictActivation(model, data, match.pointIndex, targetFrame),
+        pointIndex: match.pointIndex,
+        frame: targetFrame,
+        matchedDistance: match.distance,
+      })
     } catch (error) {
-      setPrediction({ error: error.message })
+      setPrediction({ error: error.message, pointIndex: match.pointIndex, frame: targetFrame })
     }
   }
 
@@ -288,15 +355,36 @@ function App() {
               <div className="prediction-card">
                 <div className="prediction-title"><span>AI prediction</span>{model?.prototype && <em>Prototype</em>}</div>
                 <h3>Activation in the next 20 frames?</h3>
-                <p>The MLP uses this point&apos;s previous 40 signal frames, XYZ coordinates, and current time.</p>
+                <p>Enter a coordinate and time. The nearest sampled point supplies the previous 40 signal frames.</p>
+                <div className="prediction-inputs">
+                  {['x', 'y', 'z'].map((axis) => (
+                    <label key={axis}>
+                      <span>{axis.toUpperCase()}</span>
+                      <input
+                        type="number"
+                        step="any"
+                        value={predictionInput[axis]}
+                        onChange={(event) => editPredictionInput(axis, event.target.value)}
+                      />
+                    </label>
+                  ))}
+                  <label>
+                    <span>Time</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={predictionInput.time}
+                      onChange={(event) => editPredictionInput('time', event.target.value)}
+                    />
+                  </label>
+                </div>
                 {modelError && <div className="prediction-message error">{modelError}</div>}
                 {!model && !modelError && <div className="prediction-message">Loading trained model…</div>}
-                {model && frame < model.input.historyFrames - 1 && <div className="prediction-message">Move to frame {model.input.historyFrames} or later to provide enough signal history.</div>}
-                {model && frame + model.input.horizonFrames >= metadata.timeCount && <div className="prediction-message">Move at least {model.input.horizonFrames} frames earlier so the result can be evaluated.</div>}
+                {model && <div className="prediction-message">Valid time: {metadata.time[model.input.historyFrames - 1].toFixed(1)}–{metadata.time[metadata.timeCount - model.input.horizonFrames - 1].toFixed(1)}</div>}
                 <button
                   className="prediction-button"
                   onClick={runPrediction}
-                  disabled={!model || frame < model.input.historyFrames - 1 || frame + model.input.horizonFrames >= metadata.timeCount}
+                  disabled={!model}
                 >
                   Predict activation
                 </button>
@@ -306,6 +394,7 @@ function App() {
                     <div><span>Prediction</span><strong>{prediction.predicted ? 'YES' : 'NO'}</strong></div>
                     <div><span>Confidence</span><strong>{(prediction.confidence * 100).toFixed(1)}%</strong></div>
                     <div><span>Ground truth</span><strong>{prediction.actual ? 'YES' : 'NO'}</strong></div>
+                    <p>Matched sample #{prediction.pointIndex} · distance {prediction.matchedDistance.toFixed(2)}</p>
                     <small className={prediction.correct ? 'correct' : 'incorrect'}>{prediction.correct ? 'Correct prediction' : 'Incorrect prediction'}</small>
                   </div>
                 )}
@@ -317,7 +406,7 @@ function App() {
       </section>
 
       <section className="signal-panel panel">
-        <div className="signal-heading"><div><span className="eyebrow">Linked signal</span><h2>Electrical signal U<sub>heart</sub> over simulation time</h2></div><p>The red cursor is the time used for the 3D color map. Click or drag to move it.</p></div>
+        <div className="signal-heading"><div><span className="eyebrow">Linked signal</span><h2>Electrical signal U<sub>heart</sub> over simulation time</h2></div><p>Only observed signal is shown before prediction. Click Predict to reveal the future and ground truth.</p></div>
         <SignalPlot
           trace={selectedTrace}
           time={metadata.time}

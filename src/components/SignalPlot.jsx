@@ -17,22 +17,24 @@ export default function SignalPlot({
   const svgRef = useRef()
   const geometry = useMemo(() => {
     if (!trace?.length) return null
+    const revealedThrough = showPredictionWindow ? trace.length - 1 : frame
     let min = Infinity
     let max = -Infinity
-    for (const value of trace) {
+    for (let index = 0; index <= revealedThrough; index += 1) {
+      const value = trace[index]
       min = Math.min(min, value)
       max = Math.max(max, value)
     }
     const ySpan = Math.max(max - min, 1e-6)
     const plotWidth = WIDTH - PAD.left - PAD.right
     const plotHeight = HEIGHT - PAD.top - PAD.bottom
-    const points = Array.from(trace, (value, index) => {
+    const points = Array.from(trace.subarray(0, revealedThrough + 1), (value, index) => {
       const x = PAD.left + (index / (trace.length - 1)) * plotWidth
       const y = PAD.top + (1 - (value - min) / ySpan) * plotHeight
       return `${x.toFixed(2)},${y.toFixed(2)}`
     }).join(' ')
     return { min, max, points, plotWidth, plotHeight }
-  }, [trace])
+  }, [trace, frame, showPredictionWindow])
 
   if (!geometry) return <div className="signal-empty">Select a point to inspect its signal.</div>
 
@@ -66,6 +68,12 @@ export default function SignalPlot({
         <>
           <rect x={frameX(historyStart)} y={PAD.top} width={Math.max(1, cursorX - frameX(historyStart))} height={geometry.plotHeight} className="history-window" />
           <rect x={cursorX} y={PAD.top} width={Math.max(1, frameX(horizonEnd) - cursorX)} height={geometry.plotHeight} className="forecast-window" />
+        </>
+      )}
+      {!showPredictionWindow && (
+        <>
+          <rect x={cursorX} y={PAD.top} width={Math.max(1, WIDTH - PAD.right - cursorX)} height={geometry.plotHeight} className="hidden-future" />
+          <text x={Math.min(cursorX + 12, WIDTH - PAD.right - 165)} y={PAD.top + 17} className="hidden-future-label">future signal hidden</text>
         </>
       )}
       <polyline points={geometry.points} className="signal-line" />

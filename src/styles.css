@@ -80,6 +80,10 @@ input[type="range"] { width: 100%; accent-color: #52cfe8; }
 .prediction-title em { padding: 3px 6px; border: 1px solid #8c6b2c; border-radius: 999px; color: #f8d66d; font-size: .58rem; font-style: normal; }
 .prediction-card h3 { margin: 0; color: #edf8fb; font-size: .86rem; line-height: 1.35; }
 .prediction-card > p { margin: 0; color: #7e99a7; font-size: .69rem; line-height: 1.45; }
+.prediction-inputs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.prediction-inputs label { display: grid; grid-template-columns: 24px 1fr; align-items: center; gap: 4px; color: #7895a4; font-size: .62rem; font-weight: 750; }
+.prediction-inputs input { width: 100%; min-width: 0; padding: 7px 6px; border: 1px solid #29495b; border-radius: 6px; outline: none; background: #071722; color: #dff7fc; font: inherit; font-size: .7rem; }
+.prediction-inputs input:focus { border-color: #4fa9c4; box-shadow: 0 0 0 2px rgba(79, 169, 196, .13); }
 .prediction-button { width: 100%; border-color: #367f9c; background: linear-gradient(120deg, #176174, #274c75); color: #f3fbfd; font-size: .76rem; font-weight: 750; }
 .prediction-message { padding: 8px; border-radius: 7px; background: #081a26; color: #8aa5b2; font-size: .68rem; line-height: 1.4; }
 .prediction-message.error { color: #ff9c94; }
@@ -91,6 +95,7 @@ input[type="range"] { width: 100%; accent-color: #52cfe8; }
 .prediction-result strong { margin-top: 3px; color: #dff7fc; font-size: .79rem; }
 .prediction-result.yes > div:first-child strong { color: #4ee6a8; }
 .prediction-result.no > div:first-child strong { color: #f8d66d; }
+.prediction-result p { grid-column: 1 / -1; margin: 0; padding: 6px; border-top: 1px solid #1c3949; color: #7895a4; text-align: center; font-size: .62rem; }
 .prediction-result small { grid-column: 1 / -1; padding: 6px; border-top: 1px solid #1c3949; text-align: center; font-size: .65rem; }
 .prediction-result small.correct { color: #4ee6a8; background: rgba(78, 230, 168, .07); }
 .prediction-result small.incorrect { color: #ff8b82; background: rgba(255, 107, 95, .07); }
@@ -131,6 +136,8 @@ input[type="range"] { width: 100%; accent-color: #52cfe8; }
 .chart-grid { stroke: #183442; stroke-width: 1; }
 .history-window { fill: rgba(112, 225, 245, .11); }
 .forecast-window { fill: rgba(248, 214, 109, .12); }
+.hidden-future { fill: rgba(3, 12, 19, .72); }
+.hidden-future-label { fill: #607d8b; font-size: 10px; font-weight: 650; letter-spacing: .05em; text-transform: uppercase; }
 .signal-line { fill: none; stroke: #70e1f5; stroke-width: 2.2; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 5px rgba(112, 225, 245, .34)); }
 .activation-line { stroke: #4ee6a8; stroke-width: 1.5; stroke-dasharray: 3 4; }
 .activation-label { fill: #71eab8; font-size: 10px; }
