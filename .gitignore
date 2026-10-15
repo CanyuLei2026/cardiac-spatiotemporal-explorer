@@ -5,3 +5,8 @@ dist
 .env
 .env.*
 !*.env.example
+.venv/
+__pycache__/
+*.pyc
+training/runs/
+training/private_data/

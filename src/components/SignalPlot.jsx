@@ -4,7 +4,16 @@ const WIDTH = 1000
 const HEIGHT = 230
 const PAD = { left: 58, right: 24, top: 18, bottom: 38 }
 
-export default function SignalPlot({ trace, time, frame, onFrameChange }) {
+export default function SignalPlot({
+  trace,
+  time,
+  frame,
+  onFrameChange,
+  historyFrames,
+  horizonFrames,
+  activationFrame,
+  showPredictionWindow,
+}) {
   const svgRef = useRef()
   const geometry = useMemo(() => {
     if (!trace?.length) return null
@@ -28,6 +37,10 @@ export default function SignalPlot({ trace, time, frame, onFrameChange }) {
   if (!geometry) return <div className="signal-empty">Select a point to inspect its signal.</div>
 
   const cursorX = PAD.left + (frame / (trace.length - 1)) * geometry.plotWidth
+  const frameX = (value) => PAD.left + (value / (trace.length - 1)) * geometry.plotWidth
+  const historyStart = Math.max(0, frame - historyFrames + 1)
+  const horizonEnd = Math.min(trace.length - 1, frame + horizonFrames)
+  const activationX = activationFrame === null ? null : frameX(activationFrame)
   const handlePointer = (event) => {
     const rect = svgRef.current.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * WIDTH
@@ -49,7 +62,19 @@ export default function SignalPlot({ trace, time, frame, onFrameChange }) {
         const y = PAD.top + ratio * geometry.plotHeight
         return <line key={ratio} x1={PAD.left} x2={WIDTH - PAD.right} y1={y} y2={y} className="chart-grid" />
       })}
+      {showPredictionWindow && (
+        <>
+          <rect x={frameX(historyStart)} y={PAD.top} width={Math.max(1, cursorX - frameX(historyStart))} height={geometry.plotHeight} className="history-window" />
+          <rect x={cursorX} y={PAD.top} width={Math.max(1, frameX(horizonEnd) - cursorX)} height={geometry.plotHeight} className="forecast-window" />
+        </>
+      )}
       <polyline points={geometry.points} className="signal-line" />
+      {showPredictionWindow && activationX !== null && (
+        <>
+          <line x1={activationX} x2={activationX} y1={PAD.top} y2={HEIGHT - PAD.bottom} className="activation-line" />
+          <text x={activationX + 5} y={PAD.top + 13} className="activation-label">true activation</text>
+        </>
+      )}
       <line x1={cursorX} x2={cursorX} y1={PAD.top} y2={HEIGHT - PAD.bottom} className="time-cursor" />
       <circle
         cx={cursorX}

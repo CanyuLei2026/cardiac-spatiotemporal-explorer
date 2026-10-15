@@ -1,6 +1,6 @@
 # Cardiac Spatiotemporal Explorer
 
-An interactive web viewer for cardiac geometry and per-point electrical signals. The application links a 3D point-cloud view with an 801-frame `U_heart` trace.
+An interactive web application for cardiac geometry, per-point electrical signals, and neural-network activation prediction. The application links a 3D point-cloud view with an 801-frame `U_heart` trace and predicts whether the selected point will activate within the next 20 frames.
 
 ## Live demo
 
@@ -8,7 +8,7 @@ An interactive web viewer for cardiac geometry and per-point electrical signals.
 
 ## Data
 
-The original research dataset is too large to include in this GitHub repository. Therefore, `case_0004.mat` was selected as a representative cardiac data case for this project. To keep the web demonstration lightweight, the included data is a fixed-seed, 2,500-point sample from the 11,000 cardiac points in the source case.
+The original multi-case research dataset is stored on the UVA HPC and is too large to include in this public repository. Five complete cases are used for the final HW2 training, validation, and held-out testing experiment. `case_0004.mat` is reserved as the unseen test/demo case. To keep the web application lightweight, the included browser data is a fixed-seed, 2,500-point sample from the 11,000 cardiac points in that case.
 
 Included variables:
 
@@ -31,6 +31,31 @@ Included variables:
 - Add, remove, import, and export point annotations
 - Browse saved annotations in a list, review notes, select their 3D points, and delete records directly
 - Responsive desktop and mobile layouts
+- Predict whether a selected point will activate within the next 20 frames
+- Run the trained PyTorch MLP weights directly in the browser
+- Compare the prediction with ground truth and display confidence
+- Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
+- Display training/validation loss, held-out metrics, confusion matrix, and linear-baseline comparison
+
+## Neural-network task
+
+For each point, the activation frame is defined as the frame with the steepest positive `U_heart` change. Each classification example contains the previous 40 signal values, normalized XYZ coordinates, and current normalized time. The binary target indicates whether activation occurs during the next 20 frames.
+
+The MLP architecture is `44 → 64 → 32 → 2` with ReLU activations. Training uses cross-entropy loss, Adam, early stopping, and balanced positive/negative windows. A single-linear-layer logistic-regression classifier is trained on the same input as the shallow benchmark.
+
+Cases are split before windows are generated:
+
+- Three complete cases for training
+- One complete case for validation
+- One complete case for held-out testing
+
+This prevents similar windows from the same cardiac simulation from appearing in both training and testing. See [`training/README.md`](training/README.md) for commands and generated artifacts.
+
+## Held-out results
+
+The final model was evaluated on 42,964 examples from the unseen `case_0004`. The MLP achieved **94.13% accuracy**, **5.87% error**, **0.944 F1**, and **0.989 AUROC**. The logistic-regression benchmark achieved **92.12% accuracy** and **7.88% error** on the same examples. Thus, the neural network reduced the benchmark error by about 25.5% relative to logistic regression.
+
+The saved metrics, learning curves, confusion matrix, and PyTorch checkpoint are in [`artifacts/`](artifacts/). The browser uses the same trained weights exported to [`public/model/activation_model.json`](public/model/activation_model.json).
 
 ## Run locally
 
@@ -57,11 +82,15 @@ npm run preview
 - Three.js
 - React Three Fiber
 - Drei
+- PyTorch
+- NumPy, SciPy, and h5py
+- Matplotlib
 
 ## Annotation and backend status
 
 - Interactive point annotation: implemented. Annotations are stored locally in the browser and can be exported or imported as JSON.
-- Backend/database: not implemented in the initial version.
+- Neural-network inference: implemented in the browser using JSON-exported PyTorch weights.
+- Backend/database: not implemented. No backend is required for prediction.
 
 ## Label definitions
 
@@ -74,3 +103,7 @@ The source stores time from 0 to 80 with a step of 0.1, but does not reliably en
 ## Re-export a sample case
 
 The MATLAB converter is available at `scripts/export_case_for_web.m`. It reads the source `.mat` file without modifying it and emits compact browser assets using a fixed random seed.
+
+## AI-assisted development disclosure
+
+OpenAI Codex was used to assist with project planning, implementation, debugging, documentation, and interface development. The model architecture, data split, label definition, metrics, and complete training/inference workflow are documented so they can be reviewed and explained independently.

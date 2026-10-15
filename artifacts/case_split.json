@@ -1,0 +1,13 @@
+{
+  "training": [
+    "case_0001",
+    "case_0002",
+    "case_0003"
+  ],
+  "validation": [
+    "case_0005"
+  ],
+  "test": [
+    "case_0004"
+  ]
+}

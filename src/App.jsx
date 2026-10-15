@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import HeartViewer from './components/HeartViewer.jsx'
+import ModelPerformance from './components/ModelPerformance.jsx'
 import SignalPlot from './components/SignalPlot.jsx'
+import { findActivationFrame, loadActivationModel, predictActivation } from './activationModel.js'
 import { loadCardiacCase, signalAt, traceFor } from './data.js'
 
 const DEFAULT_FILTERS = { region: 'all', pointType: 'all', component: 'all' }
@@ -44,6 +46,9 @@ function App() {
   const [resetVersion, setResetVersion] = useState(0)
   const [label, setLabel] = useState('Landmark')
   const [note, setNote] = useState('')
+  const [model, setModel] = useState(null)
+  const [modelError, setModelError] = useState('')
+  const [prediction, setPrediction] = useState(null)
   const importRef = useRef()
   const [annotations, setAnnotations] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cardiac-annotations') || '[]') } catch { return [] }
@@ -59,6 +64,12 @@ function App() {
   }, [])
 
   useEffect(() => {
+    loadActivationModel()
+      .then(setModel)
+      .catch((error) => setModelError(error.message))
+  }, [])
+
+  useEffect(() => {
     localStorage.setItem('cardiac-annotations', JSON.stringify(annotations))
   }, [annotations])
 
@@ -71,6 +82,7 @@ function App() {
   }, [playing, speed, data])
 
   const selectedTrace = useMemo(() => (data && selected !== null ? traceFor(data, selected) : null), [data, selected])
+  const selectedActivationFrame = useMemo(() => findActivationFrame(selectedTrace), [selectedTrace])
   const currentValue = data && selected !== null ? signalAt(data, selected, frame) : null
   const currentAnnotation = annotations.find((item) => item.pointIndex === selected)
   const colorRange = useMemo(() => {
@@ -82,6 +94,19 @@ function App() {
     const high = values[Math.ceil((values.length - 1) * 0.98)]
     return high - low > 0.015 ? [low, high] : [data.metadata.signalMin, data.metadata.signalMax]
   }, [data, frame, colorMode])
+
+  useEffect(() => {
+    setPrediction(null)
+  }, [selected, frame])
+
+  const runPrediction = () => {
+    if (!model || !data || selected === null) return
+    try {
+      setPrediction(predictActivation(model, data, selected, frame))
+    } catch (error) {
+      setPrediction({ error: error.message })
+    }
+  }
 
   const saveAnnotation = () => {
     if (selected === null) return
@@ -138,7 +163,7 @@ function App() {
     <main className="app-shell">
       <header className="topbar">
         <div>
-          <div className="eyebrow">DS7400 · HW1</div>
+          <div className="eyebrow">DS7400 · HW2</div>
           <h1>Cardiac Spatiotemporal Explorer</h1>
         </div>
         <div className="case-badge"><span className="live-dot" />{metadata.caseId}<small>{metadata.pointCount.toLocaleString()} sampled points</small></div>
@@ -260,6 +285,31 @@ function App() {
                 <div><dt>Z</dt><dd>{data.points[selected * 3 + 2].toFixed(2)}</dd></div>
               </dl>
               <div className="potential-card"><span>Current signal value</span><strong>{currentValue.toFixed(4)}</strong><small>U<sub>heart</sub> at simulation time {metadata.time[frame].toFixed(1)}</small></div>
+              <div className="prediction-card">
+                <div className="prediction-title"><span>AI prediction</span>{model?.prototype && <em>Prototype</em>}</div>
+                <h3>Activation in the next 20 frames?</h3>
+                <p>The MLP uses this point&apos;s previous 40 signal frames, XYZ coordinates, and current time.</p>
+                {modelError && <div className="prediction-message error">{modelError}</div>}
+                {!model && !modelError && <div className="prediction-message">Loading trained model…</div>}
+                {model && frame < model.input.historyFrames - 1 && <div className="prediction-message">Move to frame {model.input.historyFrames} or later to provide enough signal history.</div>}
+                {model && frame + model.input.horizonFrames >= metadata.timeCount && <div className="prediction-message">Move at least {model.input.horizonFrames} frames earlier so the result can be evaluated.</div>}
+                <button
+                  className="prediction-button"
+                  onClick={runPrediction}
+                  disabled={!model || frame < model.input.historyFrames - 1 || frame + model.input.horizonFrames >= metadata.timeCount}
+                >
+                  Predict activation
+                </button>
+                {prediction?.error && <div className="prediction-message error">{prediction.error}</div>}
+                {prediction && !prediction.error && (
+                  <div className={`prediction-result ${prediction.predicted ? 'yes' : 'no'}`}>
+                    <div><span>Prediction</span><strong>{prediction.predicted ? 'YES' : 'NO'}</strong></div>
+                    <div><span>Confidence</span><strong>{(prediction.confidence * 100).toFixed(1)}%</strong></div>
+                    <div><span>Ground truth</span><strong>{prediction.actual ? 'YES' : 'NO'}</strong></div>
+                    <small className={prediction.correct ? 'correct' : 'incorrect'}>{prediction.correct ? 'Correct prediction' : 'Incorrect prediction'}</small>
+                  </div>
+                )}
+              </div>
               {currentAnnotation && <div className={`annotation-chip ${currentAnnotation.label.toLowerCase()}`}><strong>{currentAnnotation.label}</strong><span>{currentAnnotation.note || 'No note'}</span><button onClick={() => setAnnotations((items) => items.filter((item) => item.pointIndex !== selected))}>Remove</button></div>}
             </>
           ) : <p className="empty-copy">Select a point in the 3D view.</p>}
@@ -268,8 +318,19 @@ function App() {
 
       <section className="signal-panel panel">
         <div className="signal-heading"><div><span className="eyebrow">Linked signal</span><h2>Electrical signal U<sub>heart</sub> over simulation time</h2></div><p>The red cursor is the time used for the 3D color map. Click or drag to move it.</p></div>
-        <SignalPlot trace={selectedTrace} time={metadata.time} frame={frame} onFrameChange={setFrame} />
+        <SignalPlot
+          trace={selectedTrace}
+          time={metadata.time}
+          frame={frame}
+          onFrameChange={setFrame}
+          historyFrames={model?.input.historyFrames ?? 40}
+          horizonFrames={model?.input.horizonFrames ?? 20}
+          activationFrame={selectedActivationFrame}
+          showPredictionWindow={Boolean(prediction && !prediction.error)}
+        />
       </section>
+
+      <ModelPerformance model={model} />
     </main>
   )
 }
