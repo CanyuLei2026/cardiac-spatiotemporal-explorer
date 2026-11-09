@@ -1,0 +1,20 @@
+{
+  "dataDir": "/project/jxie_group/Canyu/B2H/data/pointcloud_mat_9.16",
+  "trainCases": ["case_0001", "case_0002", "case_0003"],
+  "validationCase": "case_0005",
+  "testCase": "case_0004",
+  "dataSeed": 7400,
+  "seeds": [7400, 7401, 7402],
+  "models": ["gated_dual_branch", "gated_decay", "gated_context25", "gated_context50", "gated_context25_skip"],
+  "modelSettings": {
+    "gated_dual_branch": {"weightDecay": 0.0},
+    "gated_decay": {"weightDecay": 0.001},
+    "gated_context25": {"weightDecay": 0.001, "contextDropout": 0.25},
+    "gated_context50": {"weightDecay": 0.001, "contextDropout": 0.5},
+    "gated_context25_skip": {"weightDecay": 0.001, "contextDropout": 0.25, "signalSkip": true}
+  },
+  "epochs": 60,
+  "batchSize": 256,
+  "learningRate": 0.0001,
+  "threads": 8
+}

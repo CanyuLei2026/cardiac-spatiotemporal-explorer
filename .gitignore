@@ -6,6 +6,9 @@ dist
 .env.*
 !*.env.example
 .venv/
+.venv-hw3/
+artifacts_hw3/
+logs/
 __pycache__/
 *.pyc
 training/runs/

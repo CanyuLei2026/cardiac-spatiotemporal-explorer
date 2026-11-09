@@ -1,120 +1,127 @@
 # Cardiac Spatiotemporal Explorer
 
-An interactive web application for cardiac geometry, per-point electrical signals, and neural-network activation prediction. The application links a 3D point-cloud view with an 801-frame `U_heart` trace and predicts whether the selected point will activate within the next 20 frames.
+UVA Fall 2026 DS7400 — Homework 1, 2, and 3
 
-## Live demo
+This project combines an interactive cardiac point-cloud viewer with electrical-signal classification. HW1 builds the viewer, HW2 adds an MLP and interactive training, and HW3 investigates gated fusion and context regularization.
 
-[Open the Cardiac Spatiotemporal Explorer](https://canyulei2026.github.io/cardiac-spatiotemporal-explorer/)
+[Open the live application](https://canyulei2026.github.io/cardiac-spatiotemporal-explorer/)
 
-## Data
+The live application currently uses the HW2 model. HW3 models are evaluated through the experiment scripts described below.
 
-The original multi-case research dataset is stored on the UVA HPC and is too large to include in this public repository. Five complete cases are used for the final HW2 training, validation, and held-out testing experiment. `case_0004.mat` is reserved as the unseen test/demo case. To keep the web application lightweight, the included browser data is a fixed-seed, 2,500-point sample from the 11,000 cardiac points in that case.
+## HW1 and HW2 application
 
-Included variables:
+### Features
 
-- 3D myocardial point coordinates
-- Per-point `U_heart` signals
-- Time values
-- Surface-region, point-type, and component labels
-- Original point indices for traceability
+- Rotate, zoom, filter, and animate a 3D cardiac point cloud.
+- Select a point to inspect its coordinates and linked electrical signal.
+- Save point annotations, review notes in a list, delete markers, and import/export JSON. Annotations are stored in the browser.
+- Predict activation in the next 20 frames, display confidence and ground truth, and reveal the signal after prediction.
+- View model metrics, confusion matrices, and recorded training-loss replay.
+- Train a small browser model with adjustable learning rate, epochs, and hidden units, with live loss/accuracy charts.
 
-## Features
+The demonstration contains a fixed-seed, 2,500-point sample from the 11,000 points in case_0004, with 801 signal frames. Point-type and surface-region labels have readable definitions in the interface. Time is displayed as simulation time because the source does not reliably identify its physical unit.
 
-- Rotate, pan, and zoom the 3D cardiac point cloud
-- Color the geometry by electrical potential at the current time
-- Play, pause, scrub, and change animation speed
-- Select a point and inspect its signal after requesting a prediction
-- Synchronize the signal cursor with the 3D time frame
-- Filter points by surface region, point type, or component
-- Read human-readable definitions for every numeric point label
-- Switch between adaptive per-frame contrast and a fixed full-case color scale
-- Add, remove, import, and export point annotations
-- Browse saved annotations in a list, review notes, select their 3D points, and delete records directly
-- Responsive desktop and mobile layouts
-- Predict whether a selected point will activate within the next 20 frames
-- Enter XYZ coordinates and simulation time; the app matches the nearest sampled point for prediction
-- Run the trained PyTorch MLP weights directly in the browser
-- Compare the prediction with ground truth and display confidence
-- Hide the complete signal and its vertical scale while selecting a time, show only a fixed horizontal guide, then reveal the full trace and ground truth after prediction
-- Highlight the 40-frame input window, 20-frame forecast horizon, and true activation
-- Replay the recorded training process epoch by epoch with synchronized training/validation loss
-- Display complete training, validation, and held-out test metrics, plus a confusion matrix and linear-baseline comparison
-- Train a compact MLP directly in the browser with adjustable learning rate, epoch count, and hidden-layer size
-- Monitor live training/validation loss and accuracy, progress, and best epoch during the browser experiment
+### HW2 model results
 
-## Neural-network task
+The HW2 MLP uses `44 -> 64 -> 32 -> 2`, ReLU, cross-entropy, Adam, and early stopping. Its held-out test accuracy is **94.31%**, with **5.69% error**, compared with **6.29% error** for the linear benchmark. These are the original HW2 results; the controlled HW3 reruns below use a different training budget.
 
-For each point, the activation frame is defined as the frame with the steepest positive `U_heart` change. Each classification example contains the previous 40 signal values, normalized XYZ coordinates, and current normalized time. The binary target indicates whether activation occurs during the next 20 frames.
+The browser loads the exported weights from [activation_model.json](public/model/activation_model.json). The browser-training sandbox is a separate small experiment. Prediction and browser training require no backend or database.
 
-The MLP architecture is `44 → 64 → 32 → 2` with ReLU activations. Training uses cross-entropy loss, Adam, early stopping, and balanced positive/negative windows. A single-linear-layer logistic-regression classifier is trained on the same input as the shallow benchmark.
+### Run the web application
 
-Cases are split before windows are generated:
-
-- Three complete cases for training
-- One complete case for validation
-- One complete case for held-out testing
-
-This prevents similar windows from the same cardiac simulation from appearing in both training and testing. See [`training/README.md`](training/README.md) for commands and generated artifacts.
-
-## Held-out results
-
-The final model was trained with a `0.0001` learning rate and evaluated on 42,964 examples from the unseen `case_0004`. The MLP achieved **94.31% accuracy**, **5.69% error**, **0.943 F1**, and **0.988 AUROC**. The logistic-regression benchmark achieved **93.71% accuracy** and **6.29% error** on the same examples. Thus, the neural network reduced the benchmark error by about 9.7% relative to logistic regression.
-
-The saved metrics, learning curves, confusion matrix, and PyTorch checkpoint are in [`artifacts/`](artifacts/). The browser uses the same trained weights exported to [`public/model/activation_model.json`](public/model/activation_model.json).
-
-## Interactive training sandbox
-
-The bonus training panel runs a separate, lightweight MLP experiment in a browser worker so the interface stays responsive. Choose a learning rate, 5–30 epochs (20 by default), and 16, 32, or 64 hidden units, then select **Start training**. The panel updates training and validation loss, accuracy, progress, and the best epoch after every epoch. **Stop** ends a run at the next epoch boundary.
-
-For speed, this experiment uses a compact balanced sample from the included `case_0004` browser data and one hidden layer. It is an interactive teaching demonstration only; it does not replace the formal five-case HPC model, held-out test split, or reported results above.
-
-## Run locally
-
-Requires Node.js 18 or newer.
+Requires Node.js 18 or newer:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite.
-
-To verify the production build:
+For a production preview:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-## Major libraries
+Major libraries: React, Vite, Three.js, React Three Fiber, Drei, PyTorch, NumPy, SciPy, h5py, and Matplotlib. The full HW2 training instructions are in [training/README.md](training/README.md).
 
-- React
-- Vite
-- Three.js
-- React Three Fiber
-- Drei
-- PyTorch
-- NumPy, SciPy, and h5py
-- Matplotlib
+## HW3 experiment summary
 
-## Annotation and backend status
+### 1 Task and dataset
 
-- Interactive point annotation: implemented. Annotations are stored locally in the browser and can be exported or imported as JSON.
-- Neural-network inference: implemented in the browser using JSON-exported PyTorch weights.
-- Backend/database: not implemented. No backend is required for prediction.
+Predict whether a cardiac point will activate within the next 20 frames. Activation is the frame with the largest positive change in its `U_heart` signal. Inputs contain the previous 40 signal values, XYZ coordinates, and normalized current time (44 features). Features are standardized using training-set statistics.
 
-## Label definitions
+| Split | Cases | Samples |
+|---|---|---:|
+| Training | case_0001, case_0002, case_0003 | 116,748 |
+| Validation | case_0005 | 39,240 |
+| Test | case_0004 | 42,964 |
 
-- Point type: `1` interior sample, `2` endocardial surface, `3` epicardial surface, `4` full-boundary sample.
-- Surface region: `0` myocardial interior, `1` outer surface, `2` LV endocardium, `3` RV endocardium.
-- Component ID: connected component of the point-cloud k-NN graph. The included case contains one main component (`1`).
+The original dataset is too large to include. A representative 2,500-point sample of case_0004 is included for the web demo and code checks. Formal experiments require the five full MAT files containing `P_myo`, `U_heart`, and `time`.
 
-The source stores time from 0 to 80 with a step of 0.1, but does not reliably encode whether the unit is milliseconds or another simulation-time unit. The interface therefore uses the term “simulation time.”
+### 2 Baseline architecture
 
-## Re-export a sample case
+The HW2 baseline is an MLP trained with cross-entropy loss and Adam:
 
-The MATLAB converter is available at `scripts/export_case_for_web.m`. It reads the source `.mat` file without modifying it and emits compact browser assets using a fixed random seed.
+```text
+44 inputs -> 64 units + ReLU -> 32 units + ReLU -> 2 logits
+```
 
-## AI-assisted development disclosure
+### 3 Proposed modification
 
-OpenAI Codex was used to assist with project planning, implementation, debugging, documentation, and interface development. The model architecture, data split, label definition, metrics, and complete training/inference workflow are documented so they can be reviewed and explained independently.
+The hypothesis is that separate signal and context processing, followed by learned weighting, may improve prediction.
+
+- **Dual branch:** signal history maps to 32 ReLU features `s`; XYZ/time maps to 32 ReLU features `c`. Concatenate them and apply a `64 -> 32 + ReLU -> 2` classifier.
+- **Gated fusion:** compute `g = sigmoid(W_g [s,c] + b_g)` and feed `[2g * s, 2(1-g) * c]` to the classifier. Products are elementwise. The gate starts at 0.5.
+- **Final model:** gated fusion with weight decay `0.001` and context dropout `0.5`. During training, the entire context embedding is removed per sample with 50% probability; retained embeddings are scaled by two. Dropout is disabled during evaluation.
+
+Additional experiments compared longer training, a lower learning rate, different dropout probabilities, and a signal residual path.
+
+### 4 Running the experiments
+
+Run from the repository root with Python 3.13 and CPU dependencies:
+
+```bash
+python3.13 -m venv .venv-hw3
+source .venv-hw3/bin/activate
+python -m pip install -r training/hw3/requirements-hpc.lock.txt --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+Set `dataDir` in `training/hw3/config.json` and `training/hw3/regularization_config.json` to the full MAT dataset directory. Use a new output directory for each run.
+
+```bash
+# Initial comparison
+python -m training.hw3.train_experiments --output-dir artifacts_hw3/initial
+
+# Training budget and learning-rate comparisons
+python -m training.hw3.train_experiments --epochs 60 --learning-rate 0.0001 --validation-only --output-dir artifacts_hw3/lr1e4
+python -m training.hw3.train_experiments --epochs 60 --learning-rate 0.00003 --validation-only --output-dir artifacts_hw3/lr3e5
+
+# Regularization ablations
+python -m training.hw3.train_experiments --config training/hw3/regularization_config.json --validation-only --output-dir artifacts_hw3/regularization
+
+# Test the selected checkpoint
+python -m training.hw3.evaluate_selected --checkpoint artifacts_hw3/regularization/gated_context50-seed7400/best_model.pt --output-dir artifacts_hw3/test7400
+```
+
+For testing elsewhere, update the case_0004 MAT path in `training/hw3/evaluate_selected.py`. Repeat evaluation for seeds 7401/7402 and the reference checkpoints. Runs save configurations, weights, metrics, and plots. UVA batch scripts are in `training/hw3/run_*.slurm`; adapt their project/environment paths before submission.
+
+### 5 Main results
+
+The first 20-epoch experiment averaged 93.65% test accuracy for the baseline, 90.59% for dual branches, and 91.28% for gated fusion. The original design therefore failed to improve accuracy.
+
+The final comparison uses 60 epochs, Adam learning rate 0.0001, batch size 256, and three seeds (7400–7402). Checkpoints are selected by minimum validation loss; the classification threshold is fixed at 0.5.
+
+| Model | Mean test accuracy | Mean F1 | Mean AUROC | Accuracy sample SD |
+|---|---:|---:|---:|---:|
+| Baseline | 93.83% | 0.9374 | 0.9884 | 0.57 pp |
+| Original gated fusion | 89.32% | 0.9038 | 0.9883 | 2.85 pp |
+| **Gated fusion with regularization** | **94.77%** | **0.9500** | **0.9918** | **0.21 pp** |
+
+`pp` means percentage points. The final model improves average accuracy by 0.95 pp over the baseline and reduces seed variability.
+
+### 6 What I learned
+
+Adding branches and a gate did not automatically improve generalization. Longer training and a lower learning rate did not consistently fix instability. Weight decay and context dropout helped more, supporting context regularization on this case split, without proving a particular shortcut mechanism.
+
+Only one validation case and one test case were used. Early test results informed later investigation, so the final test comparison is exploratory. New case splits would be needed to assess broader generalization.
